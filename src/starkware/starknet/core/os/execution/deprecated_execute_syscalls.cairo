@@ -303,47 +303,9 @@ func execute_replace_class{contract_state_changes: DictAccess*}(
 // Reads a value from the current contract's storage.
 func execute_storage_read{contract_state_changes: DictAccess*}(
     contract_address, syscall_ptr: StorageRead*
-) {
-    alloc_locals;
-    local state_entry: StateEntry*;
-    local new_state_entry: StateEntry*;
-    %{
-        # Fetch a state_entry in this hint and validate it in the update that comes next.
-        ids.state_entry = __dict_manager.get_dict(ids.contract_state_changes)[
-            ids.contract_address
-        ]
-
-        ids.new_state_entry = segments.add()
-    %}
-
-    tempvar value = syscall_ptr.response.value;
-    %{
-        # Make sure the value is cached (by reading it), to be used later on for the
-        # commitment computation.
-        value = execution_helper.storage_by_address[ids.contract_address].read(
-            key=ids.syscall_ptr.request.address
-        )
-        assert ids.value == value, "Inconsistent storage value."
-    %}
-
-    // Update the contract's storage.
-    tempvar storage_ptr = state_entry.storage_ptr;
-    assert [storage_ptr] = DictAccess(
-        key=syscall_ptr.request.address, prev_value=value, new_value=value
-    );
-    let storage_ptr = storage_ptr + DictAccess.SIZE;
-
-    // Update contract_state_changes.
-    assert [new_state_entry] = StateEntry(
-        class_hash=state_entry.class_hash, storage_ptr=storage_ptr, nonce=state_entry.nonce
-    );
-    dict_update{dict_ptr=contract_state_changes}(
-        key=contract_address,
-        prev_value=cast(state_entry, felt),
-        new_value=cast(new_state_entry, felt),
-    );
-
-    return ();
+) {   
+    // register storage read, pointed by syscall_ptr in contract_state_changes
+    ...
 }
 
 // Write a value to the current contract's storage.
